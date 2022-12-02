@@ -1,0 +1,32 @@
+module Paint where
+
+import Daml.Script
+import Iou
+
+template PaintHouse
+  with
+    painter: Party
+    houseOwner: Party
+  where
+    signatory painter, houseOwner
+    agreement
+      show painter <> " will paint the house of " <> show houseOwner
+
+template OfferToPaintHouseByPainter
+  with
+    houseOwner: Party
+    painter: Party
+    bank: Party
+    amount: Amount
+  where
+    signatory painter
+    observer houseOwner
+
+    choice AcceptByOwner : ContractId Iou
+      with
+        iouId : ContractId Iou
+      controller houseOwner
+      do
+        iouId2 <- exercise iouId Transfer with newOwner = painter
+        paint <- create $ PaintHouse with painter; houseOwner
+        return iouId2
